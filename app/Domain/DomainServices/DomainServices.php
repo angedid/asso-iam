@@ -1,10 +1,16 @@
 <?php
 
 namespace App\Domain\DomainServices;
+use App\Domain\Model\AssoLicense;
+use App\Domain\Model\Order;
+use App\Domain\Model\Payment;
 use App\Domain\Model\Role;
 use App\Domain\Model\Tenant;
 use App\Models\User;
+use App\spi\DataOrError;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
 use Jekk0\Laravel\Iso3166\Validation\Rules\Iso3166Alpha2;
@@ -185,7 +191,7 @@ class DomainServices
         $validator =  Validator::make($request->all(), [
             'full_name' => 'required|string|min:2|max:255',
             'username' => 'required|string|min:2|max:255|unique:users,username',
-            'phone_number' => 'required|phone|string|min:2|max:255',
+            'phone_number' => 'required|phone',
             'password' => ['required', 'string', 'max:20',Password::min(8)
                 ->letters()
                 ->mixedCase()
@@ -712,5 +718,58 @@ class DomainServices
         } while (License::where("license_key", "=", $numberFormated)->first());
 
         return $numberFormated;
+    }
+
+    public static function generateLicense(User $user, Payment $payment) : AssoLicense
+    {
+        $orderId = $payment->order_number;
+        $order = Order::where("id", $orderId)->first();
+        Log::info("ODERS: " . json_encode($order));
+        $tenant = Tenant::where("id", $user->tenant_id)->first();
+        $users = User::where("tenant_id", $tenant->id)->get();
+        $orderItems = json_decode($order->items);
+        $licenseType = $orderItems[0];
+        Log::info("LICENSE TYPE: " . json_encode($licenseType));
+        Log::info("number_of_days: " . strval($licenseType->number_of_days));
+        $expires_at = Carbon::now()->addDays($licenseType->number_of_days);
+        $licenseData = [
+            'license_key' => self::generateLicenseKey(),
+            'assigned_to' => $user->id,
+            'tenant_id' => $tenant->id,
+            'is_trial' => $licenseType->name === "TRIAL",
+            'users' => json_encode($users),
+            'active' => true,
+            'expires_at' => $expires_at,
+            'metadata' => json_encode([]),
+            'duration' => $licenseType->number_of_days,
+            'amount' => $payment->amount,
+            'order_id' => $order->id,
+        ];
+        //Log::info("Items: " + $order->items);
+        return  AssoLicense::create($licenseData);//$service->createLicense($licenseData);
+    }
+
+    public function getLicenceDetails(Request $request, string $tenant_id) : DataOrError
+    {
+        $tenant = Tenant::where("id", $tenant_id)->first();
+        if ($tenant === null) {
+            return new DataOrError(null, [__("Tenant not found!")],true);
+        }
+
+        $licenseDetails = [];
+        $assoLicenses = AssoLicense::where("tenant_id", $tenant_id)->where('expires_at', '>', (Carbon::now())->addMinutes(2))->get();
+        foreach ($assoLicenses as $assoLicense) {
+            $user = User::where("id", $assoLicense->assigned_to)->first();
+            if ($user === null) {
+                return new DataOrError(null, [__("User not found!")],true);
+            }
+            if (self::isValidTenant($tenant, $assoLicense, $user)) {
+                $order_id = $assoLicense->order_id;
+                $order = Order::where("id", $order_id)->first();
+                $payment = Payment::where('order_number', $order_id)->where('status', Payment::SUCCESS)->first();
+                $licenseDetails[] = ['license'=>$assoLicense, 'order'=>$order, 'payment'=>$payment];
+            }
+        }
+        return new DataOrError($licenseDetails, null,false);
     }
 }

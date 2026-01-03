@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 
-class GuestApiController extends Controller
+class TestApiController extends Controller
 {
     //
     public function test()

@@ -7,10 +7,16 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "jekk0/laravel-iso3166-validation-rules": "^1.7",
         "laravel/framework": "^12.0",
         "laravel/passport": "^13.0",
         "laravel/tinker": "^2.10.1",
-        "laravel/ui": "^4.6"
+        "laravel/ui": "^4.6",
+        "nanorocks/laravel-license-manager": "^1.0",
+        "php-amqplib/php-amqplib": "^3.7",
+        "propaganistas/laravel-phone": "^6.0",
+        "rinvex/countries": "^9.1",
+        "spatie/crypto": "^2.1"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

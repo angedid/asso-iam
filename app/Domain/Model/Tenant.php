@@ -8,6 +8,7 @@ use Nanorocks\LicenseManager\Services\LicenseService;
 
 class Tenant extends Model
 {
+    public const DEFAULT_TENANT_ID = "f733f002-53ec-4f82-aaa3-7374fc728b87";
     protected $table = 'tenants';
     protected $primaryKey = 'id';
     protected $casts = ['id' => 'string'];
