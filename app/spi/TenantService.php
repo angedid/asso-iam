@@ -3,6 +3,7 @@
 namespace App\spi;
 
 use App\Domain\DomainServices\DomainServices;
+use App\Domain\Model\DataOrError;
 use App\Domain\Model\Role;
 use App\Domain\Model\Tenant;
 use App\Jobs\ProcessMessages;
@@ -10,7 +11,6 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -28,6 +28,16 @@ class TenantService
          }
 
          return new DataOrError(['tenants' => $tenants], null,false);
+    }
+
+    public function retrieveTenantById(Request $request, string $tenant_id)
+    {
+        $tenant = Tenant::where('id', $tenant_id)->first();
+        if(!$tenant){
+            return new DataOrError(null, [__("Grossiste inconnu!")],true);
+        }
+        $owner = User::where('id', $tenant->owner)->first();
+        return new DataOrError(['tenant' => $tenant, 'owner' => $owner], null,false);
     }
 
 
@@ -52,23 +62,82 @@ class TenantService
         DB::beginTransaction();
 
         try {
+
+            $existTenant = Tenant::where('name', $request->get('name'))->where('country', $countryCode)->first();
+            if ($existTenant !== null) {
+                return new DataOrError(null, [__("Le nom " . $request->get('name') . " n'est pas disponible.")],true);
+            }
+
+            $config = [
+                'private_key_bits' => 2048,
+                'private_key_type' => OPENSSL_KEYTYPE_RSA,
+            ];
+            $privateKey = openssl_pkey_new($config);
+            Storage::disk('private')->makeDirectory($tenantid);
+            $keysBaseDir = base_path() . '/storage/app/private/' . $tenantid;
+            $pathToPrivateKey = $keysBaseDir . '/private.pem';
+            $retVal = openssl_pkey_export_to_file($privateKey, $pathToPrivateKey);
+
+            if (!$retVal) {
+                throw new \Exception('Unable to generate private key localy');
+            }
+
+            $sftpBaseDir = 'home/security/' . $tenantid ;
+            $sftpPathToPrivateKey = $sftpBaseDir . '/private.pem';
+
+            $retVal = Storage::disk('sftp')->put($sftpPathToPrivateKey, file_get_contents($pathToPrivateKey));
+
+            if (!$retVal) {
+                throw new \Exception('Unable to generate private key on sftp');
+            }
+
+            if (file_exists($pathToPrivateKey)) {
+                unlink($pathToPrivateKey);
+            }
+
+            $publicKeyDetails = openssl_pkey_get_details($privateKey);
+            $publicKey = $publicKeyDetails['key'];
+            //throw new \Exception($publicKey);
+            $pathToPublicKey = $keysBaseDir . '/public.pem';
+            $fh = fopen($pathToPublicKey, 'w');
+            fwrite($fh, $publicKey);
+            fclose($fh);
+
+            $sftpPathToPublicKey = $sftpBaseDir . '/public.pem';
+
+            $retVal = Storage::disk('sftp')->put($sftpPathToPublicKey, file_get_contents($pathToPublicKey));
+            if (!$retVal) {
+                throw new \Exception('Unable to read private key on sftp');
+            }
+            if (file_exists($keysBaseDir)) {
+                DomainServices::deleteDirectory($keysBaseDir);
+                //unlink($keysBaseDir);
+            }
+            /*$retVal2 = openssl_pkey_export_to_file($publicKey, $pathToPublicKey);
+            if (!$retVal2) {
+                throw new \Exception('Unable to generate public key');
+            }*/
+
             $tenantData = [
                 'id' => $tenantid,
-                'name' => trim($request->get('name')),
-                'city' => trim($request->get('city')),
-                'location' => trim($request->get('location')),
-                'region' => trim($request->get('region')),
+                'name' => trim($request->input('name')),
+                'city' => trim($request->input('city')),
+                'location' => trim($request->input('location')),
+                'region' => trim($request->input('region')),
                 'country' => $countryCode,
                 //'logo' => $path,
-                'phone_number' => trim($request->get('phone_number')),
-                'website' => trim($request->get('website')),
-                'address' => trim($request->get('address')),
+                'phone_number' => trim($request->input('phone_number')),
+                'website' => trim($request->input('website')),
+                'address' => trim($request->input('address')),
                 'active' => true,
-                'taxpayer_number' => trim($request->get('taxpayer_number')),
-                'number_trade_register' => trim($request->get('number_trade_register')),
+                'taxpayer_number' => trim($request->input('taxpayer_number')),
+                'number_trade_register' => trim($request->input('number_trade_register')),
                 'network' => json_encode(array()),
+                'private_key_path' => $sftpPathToPrivateKey,
+                'public_key_path' => $sftpPathToPublicKey,
             ];
             //Log::info('Tenant Data : {tntdata}', ['tntdata' => $tenantData]);
+
             $tenant = Tenant::create($tenantData);
 
             $userid = Str::uuid()->toString();
@@ -78,11 +147,13 @@ class TenantService
                 $email = trim($request->get('email'));
             }*/
 
+            //type::text = ANY (ARRAY['MERCHANT_USER'::character varying, 'SELLER_USER'::character varying]::text[])
+
             $username = trim($request->get('username'));
             $userData = [
                 'id' => $userid,
                 'tenant_id' => $tenant->id,
-                'type' => 'MERCHANT_USER',
+                'type' => 'MERCHANT_ADMINISTRATOR',
                 'full_name' => trim($request->get('full_name')),
                 'username' => $username.'@'.$tenant->id,
                 'local_username' => $username,
@@ -94,12 +165,12 @@ class TenantService
                 'country' => $countryCode,
                 'active' => true,
                 'network' => json_encode([]),
+                'private_key_path' => $sftpPathToPrivateKey,
+                'public_key_path' => $sftpPathToPublicKey,
             ];
 
-
-
-
             $user = User::create($userData);
+
             //$user->local_username = $username;
             //$user->save();
 
@@ -199,6 +270,8 @@ class TenantService
         //Storage::disk('local')->makeDirectory('tenants/'.$id.'/logo');
         return $dataOrError;
     }
+
+
 
     public function setLogo(Request $request, string $tenant_id)
     {

@@ -25,4 +25,11 @@ export default defineConfig({
             vue: 'vue/dist/vue.esm-bundler.js',
         },
     },
+    server: {
+        cors: {
+            origin: 'http://localhost:9001',
+            methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+            allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+        },
+    },
 });

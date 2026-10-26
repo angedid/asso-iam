@@ -3,6 +3,7 @@
 namespace App\spi;
 
 use App\Domain\DomainServices\DomainServices;
+use App\Domain\Model\DataOrError;
 use Illuminate\Http\Request;
 
 class AssoLicenseService

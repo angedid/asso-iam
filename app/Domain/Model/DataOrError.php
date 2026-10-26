@@ -1,6 +1,6 @@
 <?php
 
-namespace App\spi;
+namespace App\Domain\Model;
 
 class DataOrError
 {

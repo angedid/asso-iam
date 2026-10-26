@@ -33,6 +33,9 @@
                                         <?php
                                         $tenants = \App\Domain\Model\Tenant::where('id', '!=', \App\Domain\Model\Tenant::DEFAULT_TENANT_ID)->get();
                                         $defaultTenant = \App\Domain\Model\Tenant::where('id', \App\Domain\Model\Tenant::DEFAULT_TENANT_ID)->first();
+                                        if ($defaultTenant === null){
+                                            $defaultTenant =  \App\Domain\Model\Tenant::createDefault();
+                                        }
                                         ?>
 
                                         <input id="tenant_id" type="hidden"  name="tenant_id" value="">

@@ -45,6 +45,8 @@ class User extends Authenticatable implements OAuthenticatable
         , 'password'
         , 'active'
         , 'network'
+        , 'private_key_path'
+        , 'public_key_path'
     ];
 
     /**

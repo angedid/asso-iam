@@ -3,6 +3,7 @@
 namespace App\spi;
 
 use App\Domain\DomainServices\DomainServices;
+use App\Domain\Model\DataOrError;
 use App\Domain\Model\Group;
 use App\Domain\Model\Role;
 use App\Domain\Model\Scope;

@@ -38,7 +38,7 @@ return new class extends Migration
             $table->uuid('tenant_id')->nullable();
             $table->foreign('tenant_id')->references('id')->on('tenants')->onDelete('cascade');
             $table->uuid('parent_id')->nullable();
-            $table->enum('type',['MERCHANT_USER', 'SELLER_USER'])->nullable(false)->default('MERCHANT_USER');
+            $table->enum('type',['MERCHANT_ADMINISTRATOR', 'MERCHANT_USER', 'SELLER_USER'])->nullable(false)->default('MERCHANT_USER');
             $table->string('full_name')->nullable(false);
             $table->string('username')->nullable(false)->unique();
             $table->string('local_username')->nullable(false);
@@ -59,12 +59,13 @@ return new class extends Migration
         /*
          The username is unique in the global application.
          The local_username is not unique in the global application.
-         The local_username is unique in a specific tenant.
+         However, the local_username is unique in a specific tenant.
+         The user know only the local username. It the one he chooses went he creates his account.
          The username is constructed from the local_username and the tenant id following this rule:
          username = local_username.'@'.tenant_id (where the . is the concatenation operator)
-        For every request, that need username, we joint to the request the tenant id, ad the local username.
+        For every request, that need username, we joint to the request the tenant id, and the local username.
         A middleware catches the request, extracts the local_username and the tenant_id and the constructs
-        the username and push it in the request and forward it
+        the username and push it in the request and forward it.
          */
         Schema::table('users', function (Blueprint $table) {
             $table->unique(['tenant_id', 'local_username']);

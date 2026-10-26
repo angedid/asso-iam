@@ -22,4 +22,13 @@ class GuestController extends Controller
         }
         return response(array('success' => 1, 'faillure' => 0, 'response' => $resultReturned), 200);
     }
+
+    public function retrieveTenantById(Request $request, string $tenant_id)
+    {
+        $resultReturned = $this->tenantService->retrieveTenantById($request, $tenant_id);
+        if($resultReturned->isError){
+            return response(array('success' => 0, 'faillure' => 1, 'raison' => $resultReturned->errors), 200);
+        }
+        return response(array('success' => 1, 'faillure' => 0, 'response' => $resultReturned), 200);
+    }
 }

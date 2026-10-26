@@ -68,6 +68,7 @@ Route::post('/users/{id}/photo', [UserController::class, 'setPhoto'])->middlewar
 Route::get('/users/{id}/photo', [UserController::class, 'getPhoto']);
 Route::put('/tenants', [TenantController::class, 'updateTenant'])->middleware(['auth:api']);;
 Route::get('/tenants', [GuestController::class, 'getTenants']);
+Route::get('/tenants/{tenant_id}', [GuestController::class, 'retrieveTenantById'])/*->middleware('auth:api')*/;
 Route::post('/payments', [ApiController::class, 'makeServicePayment'])->middleware('rabbitmq.client');
 Route::get('/tenants/{tenant_id}/valid-licences', [LicenseController::class, 'getLicenceDetails'])->middleware('auth:api');
 

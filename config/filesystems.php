@@ -47,6 +47,14 @@ return [
             'report' => false,
         ],
 
+        'private' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private'),
+            'serve' => false,
+            'throw' => false,
+            'report' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),
@@ -59,6 +67,22 @@ return [
             'throw' => false,
             'report' => false,
         ],
+
+        'sftp' => [
+            'driver' => 'sftp',
+            'host' => env('SFTP_HOST'),
+            'port' => intval(env('SFTP_PORT', 22)),
+            'username' => env('SFTP_USERNAME'),
+            'password' => env('SFTP_PASSWORD'),
+            'root' => env('SFTP_ROOT', '/'),
+            'timeout' => 30,
+            'visibility' => 'public',
+            'permPublic' => 0755,
+            'directoryPerm' => 0755,
+            'directory_visibility' => 'public',
+            'throw' => true,
+        ],
+
 
     ],
 

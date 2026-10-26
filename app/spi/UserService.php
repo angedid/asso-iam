@@ -4,6 +4,7 @@ namespace App\spi;
 
 use App\Constances;
 use App\Domain\DomainServices\DomainServices;
+use App\Domain\Model\DataOrError;
 use App\Domain\Model\PasswordResetInvitation;
 use App\Domain\Model\Tenant;
 use App\Domain\Model\UserRegistrationInvitation;
@@ -13,11 +14,11 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
 class UserService
@@ -97,6 +98,14 @@ class UserService
     {
         try {
 
+            /*$usernameAndTntId = preg_split("@", $username);
+            $response = Http::get(url('api/tenants/' . $usernameAndTntId[1]));
+            Log::info(url('api/tenants/' . $usernameAndTntId[1]) . $response->body());*/
+
+            //Log::info(route('logout'));
+
+            //$response = Http::asForm()->post(route('logout'), []);
+
             if (Auth::guard('api')->check()) {
                 $access_token = $request->bearerToken();
                 //Log::info("access_token: $access_token");
@@ -137,7 +146,8 @@ class UserService
                 DB::commit();*/
 
                 ProcessMessages::dispatch(env('USER_LOGED_OUT_EXCHANGE'), env('RABBIT_MQ_EXCHANGE_TYPE'), json_encode(['jti' => $jti]));
-
+                //Session::flush();
+                //Auth::logout();
                 return new DataOrError(__("Deconnecte avec succes"), null,false);
             }else{
                 return new DataOrError(null, [__("Temoins invalide.")],true);

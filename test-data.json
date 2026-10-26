@@ -23,10 +23,27 @@
 ]
 
 
+Bonjour DG;
+Bonne et heureuse annee 2026.
+Je constate avec beaucoup de deception que depuis que vous avez recouvrer vos droits dans notre contrat, pourque vous reagissez, il faut toujours qu'on vous relance.
+Visiblement, lorsque vous me dites que vous me reviendrez, c'est un moyen d'echapatoire. 
+A la lumiere de nos derniers echanges datant du 02 Decembre 2025, vous m'avez promis de me revenir en fin de semaine. Jusqu'aujourd'hui vous n'avez pas fait signe. Cela n'augure pas des horizons meilleurs. 
+A titre de rappel, notre contrat a pris fin depuis le 22 Decembre 2025. Durant les 8 mois, vous ne m'avez propose aucun contrat. Poutant lorsque je payais la premiere tranche, vous me rassuriez que le dossier est bon et que le contrat etait eminant. 
+En ce qui me concerne, j'ai respecte le contrat. Je vous invite de votre cote de faire de meme. 
+Si jamais vous avez des propositions a faire je suis a votre ecoute. 
+
+Cordialement
 
 
 
+transaction_type::text = ANY (ARRAY['ACQUISITION'::character varying, 'RETURN'::character varying, 'PAYMENT'::character varying]::text[])
 
+credit_transactions_transaction_type_check
+
+
+supply_type::text = ANY (ARRAY['ACQUISITION'::character varying, 'RETURN'::character varying, 'PAYMENT'::character varying]::text[])
+
+supplies_supply_type_check
 
 
 

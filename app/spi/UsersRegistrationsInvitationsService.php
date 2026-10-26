@@ -3,6 +3,7 @@
 namespace App\spi;
 
 use App\Domain\DomainServices\DomainServices;
+use App\Domain\Model\DataOrError;
 use App\Domain\Model\Tenant;
 use App\Domain\Model\UserRegistrationInvitation;
 use App\Jobs\ProcessSendEMailUserInvitationJob;

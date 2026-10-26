@@ -2,20 +2,23 @@
 
 namespace App\Domain\DomainServices;
 use App\Domain\Model\AssoLicense;
+use App\Domain\Model\DataOrError;
 use App\Domain\Model\Order;
 use App\Domain\Model\Payment;
 use App\Domain\Model\Role;
 use App\Domain\Model\Tenant;
 use App\Models\User;
-use App\spi\DataOrError;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
+use InvalidArgumentException;
 use Jekk0\Laravel\Iso3166\Validation\Rules\Iso3166Alpha2;
 use Nanorocks\LicenseManager\Models\License;
 use Nanorocks\LicenseManager\Services\LicenseService;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 
 class DomainServices
 {
@@ -771,5 +774,21 @@ class DomainServices
             }
         }
         return new DataOrError($licenseDetails, null,false);
+    }
+
+    public static function deleteDirectory($dirPath) {
+        if (!is_dir($dirPath)) {
+            throw new InvalidArgumentException("$dirPath must be a directory");
+        }
+        $dir = new RecursiveDirectoryIterator($dirPath, RecursiveDirectoryIterator::SKIP_DOTS);
+        $files = new RecursiveIteratorIterator($dir, RecursiveIteratorIterator::CHILD_FIRST);
+        foreach ($files as $file) {
+            if ($file->isDir()) {
+                rmdir($file->getPathname());
+            } else {
+                unlink($file->getPathname());
+            }
+        }
+        rmdir($dirPath);
     }
 }
