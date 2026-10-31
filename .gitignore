@@ -22,6 +22,6 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
-./public/init.json
-./public/init0.json
+/public/init.json
+/public/init0.json
 
