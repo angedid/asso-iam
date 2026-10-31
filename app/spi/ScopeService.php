@@ -63,6 +63,6 @@ class ScopeService
             return new DataOrError(null, [__("Vous n'etes pas autorise!")],true);
         }
         $user = $request->user();
-        return new DataOrError(['scopes' => Scope::where('tenant_id', $user->tenant_id)->get()], null,false);
+        return new DataOrError(['scopes' => Scope::all()], null,false);
     }
 }
