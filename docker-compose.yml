@@ -1,0 +1,54 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: asso-iam-app
+    restart: unless-stopped
+    ports:
+      - "9001:9001"
+    environment:
+      APP_NAME: "STP-IAM"
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: "http://localhost:9001"
+      DB_CONNECTION: pgsql
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: asso-iam
+      DB_USERNAME: postgres
+      DB_PASSWORD: secret
+      RUN_MIGRATIONS: "true"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - asso-network
+
+  db:
+    image: postgres:16-alpine
+    container_name: asso-iam-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: asso-iam
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret
+    ports:
+      - "54320:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d asso-iam"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - asso-network
+
+networks:
+  asso-network:
+    driver: bridge
+
+volumes:
+  pgdata:
+    driver: local

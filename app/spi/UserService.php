@@ -340,7 +340,9 @@ class UserService
             $photousrPath = $request->file('photo')->store($pathusrphoto, 'public');
             $oldPhotoPath = $user->photo;
             $user->photo = $photousrPath;
-            Storage::disk('public')->delete($oldPhotoPath);
+            if ($oldPhotoPath) {
+                Storage::disk('public')->delete($oldPhotoPath);
+            }
         }
         if ($request->filled('location')) {
             $user->location = trim($request->get('location'));
@@ -381,7 +383,9 @@ class UserService
         $logoUserPath = $request->file('photo')->store($pathuserphoto, 'public');
         $oldPhotoPath = $user->photo;
         $user->photo = $logoUserPath;
-        Storage::disk('public')->delete($oldPhotoPath);
+        if ($oldPhotoPath) {
+            Storage::disk('public')->delete($oldPhotoPath);
+        }
         $user->save();
         return new DataOrError(['user' => $user], null,false);
     }

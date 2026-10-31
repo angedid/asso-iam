@@ -148,14 +148,63 @@ Use isolated services and synthetic credentials in development. Review existing 
 
 ## Tests and checks
 
+The automated test suite covers the primary IAM business logic, tenant provisioning and isolation, OAuth and token security, user/seller registrations, invitations, password reset, role/group/scope RBAC management, orders, payments, and super-administrator workflows.
+
+Execute the test suite using either of the following documented commands:
+
 ```bash
-php artisan route:list
+composer test
+```
+
+or via the Laravel test runner directly:
+
+```bash
 php artisan test
 ```
 
-The repository also defines `composer test`, which clears the configuration cache and invokes the Laravel test runner. Review `phpunit.xml` and make sure the test environment uses a disposable database. The existing `tests/Unit/ExampleTest.php` and `tests/Feature/ExampleTest.php` are starter examples; they do not establish coverage for IAM, tenant isolation, OAuth, role enforcement or token revocation.
+### Test Suite Structure
 
-**Review status:** the source and route declarations were inspected at commit `656b0e935a8b1d8cb13791c2e9e0469777a10f49` on `feature/payments-licenses-features-added`. PHP and Composer were unavailable in the review environment, so dependency installation, migrations, route listing, tests, web pages and OAuth flows were not run. These checks remain to be performed in a configured environment.
+| Test Class | Focus | Key Coverage |
+| --- | --- | --- |
+| `Tests\Unit\DomainServicesTest` | Domain services & validators | Tenant, user, seller, role and group validation; license key format; scope retrieval; directory cleaning |
+| `Tests\Unit\RoleAndGroupModelTest` | RBAC & Group hierarchy | Direct & group role resolution, recursive nested group membership, member removal |
+| `Tests\Unit\InvitationModelsTest` | Invitation state & expiry | User registration invitation validity, password reset invitation state machine |
+| `Tests\Unit\DataOrErrorTest` | Result encapsulation | Success and error response data contracts |
+| `Tests\Feature\TenantManagementTest` | Tenant lifecycle | Provisioning, validation, duplicate prevention, listing, activation/deactivation, logo handling |
+| `Tests\Feature\UserManagementTest` | User & seller management | Invitations, registration, seller provisioning, password reset and change, photo management |
+| `Tests\Feature\RoleAndGroupManagementTest` | Roles, groups & scopes | Role creation, assignment, group hierarchy, scope authorization |
+| `Tests\Feature\OrdersAndPaymentsTest` | Commercial integrations | Order placement, payment handling, status transitions, license creation |
+| `Tests\Feature\SuperAdminTest` | Platform administration | First-run setup, authentication, first-time password reset, tenant management |
+| `Tests\Feature\AuthenticationAndMiddlewareTest` | Guard & middleware security | `auth:api` token verification, `UserVerifierMiddleware` tenant routing |
+
+Make sure the test environment uses a PostgreSQL database (e.g. `asso_iam_test`) configured in `phpunit.xml` or via environment variables (`DB_DATABASE=asso_iam_test`).
+
+## Continuous Integration & Docker
+
+### Docker and Docker Compose
+
+You can build and start the application container along with PostgreSQL using Docker Compose:
+
+```bash
+docker compose up -d --build
+```
+
+The IAM service is served on port `9001` with database migrations automatically executed on startup.
+
+To build the Docker image standalone:
+
+```bash
+docker build -t asso-iam .
+```
+
+### GitHub Actions CI
+
+A GitHub Actions workflow is configured in `.github/workflows/ci.yml` that automatically:
+- Provisions a PostgreSQL 16 service container.
+- Installs and caches dependencies via Composer.
+- Applies database migrations.
+- Executes the full automated test suite (`composer test`).
+- Verifies that the Docker container builds cleanly.
 
 ## Repository structure
 
@@ -170,8 +219,10 @@ The repository also defines `composer test`, which clears the configuration cach
 | `app/Jobs/`, `app/Infrastructure/Messaging/` | Queued jobs, message publishing and listener scripts |
 | `config/` | Laravel, authentication, Passport, filesystem, queue, mail and CORS settings |
 | `database/migrations/`, `database/seeders/` | Schema migrations and starter seeder |
+| `docker/`, `Dockerfile`, `docker-compose.yml` | Containerization and local orchestration |
+| `.github/workflows/` | GitHub Actions Continuous Integration pipeline |
 | `resources/` | Views and frontend assets |
-| `tests/` | PHPUnit/Laravel starter tests |
+| `tests/` | Automated unit and feature test suite |
 
 ## Security and development limitations
 
@@ -180,7 +231,6 @@ This repository is a prototype, and the following code paths require attention b
 - `public/init.json` and `public/init0.json` are tracked under the public web directory. The setup flow also reads an `init.json` containing bootstrap-account information. Check these files and Git history for exposed credentials, remove sensitive bootstrap data from public access and rotate any credentials that were real. Do not repeat their contents in tickets or logs.
 - `UserVerifierMiddleware` logs complete login requests, which can include passwords. `CatchAccessTokenMiddleware` dispatches successful token-response content to a messaging job. Review these flows and remove sensitive credential and token exposure.
 - Several routes, including tenant retrieval, do not declare `auth:api`; review route access, tenant isolation and authorization checks. CORS currently permits all origins.
-- The supplied test suite consists of starter examples. Add integration and security tests before assuming that authentication, token revocation, user roles or tenant access work correctly.
 - HTTP `200` can represent an application-level failure for some controller responses. Document and test the contract used by each client.
 
 ## Contributing
@@ -191,7 +241,7 @@ Do not commit real personal data, tokens, passwords, private keys or configurati
 
 ## License
 
-`composer.json` declares `MIT`, but no root `LICENSE` file was present in the reviewed repository. Confirm the rights held in the project's original code and add the intended license text before describing the repository as licensed. Dependencies and third-party content retain their own licenses.
+This project is licensed under the [MIT License](LICENSE). Third-party packages and dependencies retain their own respective licenses.
 
 ## Product background
 

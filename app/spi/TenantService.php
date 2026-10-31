@@ -292,7 +292,9 @@ class TenantService
         $logoTntPath = $request->file('logo')->store($pathtntlogo, 'public');
         $oldLogoPath = $tenant->logo;
         $tenant->logo = $logoTntPath;
-        Storage::disk('public')->delete($oldLogoPath);
+        if ($oldLogoPath) {
+            Storage::disk('public')->delete($oldLogoPath);
+        }
         $tenant->save();
 
         return new DataOrError(['tenant' => $tenant], null,false);
@@ -345,7 +347,9 @@ class TenantService
             $logoTntPath = $request->file('photo')->store($pathtntlogo, 'public');
             $oldLogoPath = $tenant->photo;
             $tenant->logo = $logoTntPath;
-            Storage::disk('public')->delete($oldLogoPath);
+            if ($oldLogoPath) {
+                Storage::disk('public')->delete($oldLogoPath);
+            }
         }
         if ($request->filled('website')) {
             $tenant->website = trim($request->get('website'));
